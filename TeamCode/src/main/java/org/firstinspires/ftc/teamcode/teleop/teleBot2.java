@@ -163,7 +163,7 @@ public class teleBot2 extends OpMode
                 }
                 break;
             case GRAB:
-                verticalClawServo.setPosition(0.75);
+                verticalClawServo.setPosition(0);
                 previousAutomaticArmReturn = false;
                 horizontalSlideState = HorizontalSlideState.CONNECT;
                 verticalSlideState = VerticalSlideState.NORMAL;
@@ -186,7 +186,7 @@ public class teleBot2 extends OpMode
                 verticalArmServo.setPosition(verticalArmPositions[verticalArmPositionIndex]);
                 if (verticalTimer.milliseconds() > 650)
                 {
-                    verticalClawServo.setPosition(0);
+                    verticalClawServo.setPosition(0.5);
                     verticalTimer.reset();
                     verticalSlideState = VerticalSlideState.RETRACT;
                 }
@@ -208,7 +208,7 @@ public class teleBot2 extends OpMode
                 isVerticalScoring = false;
                 break;
             case OPEN:
-                verticalClawServo.setPosition(0);
+                verticalClawServo.setPosition(0.5);
                 verticalSlideState = VerticalSlideState.NORMAL;
         }
     }
@@ -269,7 +269,6 @@ public class teleBot2 extends OpMode
         } else if (!gamepad2.b) {
             bButtonPressed = false; // Reset the flag when the button is released
         }
-
         verticalArmServo.setPosition(verticalArmPositions[verticalArmPositionIndex]);
     }
     private void horizontalArmHandler()
@@ -311,7 +310,7 @@ public class teleBot2 extends OpMode
         if (gamepad2.y && !verticalClawToggle)
         {
             if (verticalClawServo.getPosition() == 0)
-                verticalClawServo.setPosition(0.75);
+                verticalClawServo.setPosition(0.5);
             else verticalClawServo.setPosition(0);
             verticalClawToggle = true;
         }

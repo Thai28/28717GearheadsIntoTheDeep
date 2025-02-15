@@ -6,85 +6,24 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
-import java.util.Dictionary;
-import java.util.Enumeration;
+import org.firstinspires.ftc.teamcode.drive.TankDrive;
+
+import java.util.HashMap;
 
 public class Robot
 {
-    Dictionary<ArmPosition.HorizontalPosition, Double> horizontalArmPosition =
-            new Dictionary<ArmPosition.HorizontalPosition, Double>() {
-                @Override
-                public int size() {
-                    return 0;
-                }
+    HashMap<ArmPosition.Horizontal, Double> horizontalArmPositions =
+            new HashMap<ArmPosition.Horizontal, Double>();
+    HashMap<ArmPosition.Vertical, Double> verticalArmPositions =
+            new HashMap<ArmPosition.Vertical, Double>();
 
-                @Override
-                public boolean isEmpty() {
-                    return false;
-                }
+    public  double horizontalClawOpenPosition = 0.75;
+    public  double horizontalClawClosePosition = 0;
+    public  double verticalClawOpenPosition = 0.5;
+    public  double verticalClawClosePosition = 0;
 
-                @Override
-                public Enumeration<ArmPosition.HorizontalPosition> keys() {
-                    return null;
-                }
-
-                @Override
-                public Enumeration<Double> elements() {
-                    return null;
-                }
-
-                @Override
-                public Double get(Object o) {
-                    return 0.0;
-                }
-
-                @Override
-                public Double put(ArmPosition.HorizontalPosition horizontalPosition, Double aDouble) {
-                    return 0.0;
-                }
-
-                @Override
-                public Double remove(Object o) {
-                    return 0.0;
-                }
-            };
-    Dictionary<ArmPosition.VerticalPosition, Double> verticalArmPosition =
-            new Dictionary<ArmPosition.VerticalPosition, Double>() {
-                @Override
-                public int size() {
-                    return 0;
-                }
-
-                @Override
-                public boolean isEmpty() {
-                    return false;
-                }
-
-                @Override
-                public Enumeration<ArmPosition.VerticalPosition> keys() {
-                    return null;
-                }
-
-                @Override
-                public Enumeration<Double> elements() {
-                    return null;
-                }
-
-                @Override
-                public Double get(Object o) {
-                    return 0.0;
-                }
-
-                @Override
-                public Double put(ArmPosition.VerticalPosition verticalPosition, Double aDouble) {
-                    return 0.0;
-                }
-
-                @Override
-                public Double remove(Object o) {
-                    return 0.0;
-                }
-            };
+    private boolean isHorizontalClawOpen = true;
+    private boolean isVerticalClawOpen = true;
 
     private DcMotor horizontalSlideMotor;
     private DcMotor verticalSlideMotor;
@@ -94,11 +33,19 @@ public class Robot
 
     private Servo horizontalClawServo;
     private Servo verticalClawServo;
-    public Robot(Dictionary<ArmPosition.HorizontalPosition, Double> horizontalPosition,
-                 Dictionary<ArmPosition.VerticalPosition, Double> verticalPosition)
+
+    private ArmPosition.Vertical currentVerticalArmPosition =
+            ArmPosition.Vertical.CONNECTING_POSITION;
+    private ArmPosition.Horizontal currentHorizontalArmPosition =
+            ArmPosition.Horizontal.CONNECTING_POSITION;
+
+    public TankDrive drive = new TankDrive();
+
+    public Robot(HashMap<ArmPosition.Horizontal, Double> horizontalPosition,
+                 HashMap<ArmPosition.Vertical, Double> verticalPosition)
     {
-        //horizontalArmPosition = horizontalPosition;
-        //verticalArmPosition = verticalPosition;
+        horizontalArmPositions = horizontalPosition;
+        verticalArmPositions = verticalPosition;
     }
     public void init(@NonNull HardwareMap hardwareMap)
     {
@@ -114,5 +61,91 @@ public class Robot
 
         horizontalClawServo = hardwareMap.servo.get("horizontalClaw");
         verticalClawServo = hardwareMap.servo.get("verticalClaw");
+
+        drive.init(hardwareMap);
+    }
+    public void SetSlidesMotorPower(@NonNull Slide slide, double power)
+    {
+        switch (slide)
+        {
+            case VERTICAL:
+                verticalSlideMotor.setPower(power);
+                break;
+            case HORIZONTAL:
+                horizontalSlideMotor.setPower(power);
+                break;
+        }
+    }
+    public double GetSlidesPosition(@NonNull Slide slide)
+    {
+        switch (slide)
+        {
+            case VERTICAL:
+                return verticalSlideMotor.getCurrentPosition();
+            case HORIZONTAL:
+                return horizontalSlideMotor.getCurrentPosition();
+        }
+        return 0;
+    }
+    public void SetArmPosition(ArmPosition.Horizontal position)
+    {
+        if (position == null) return;
+        currentHorizontalArmPosition = position;
+        horizontalArmServo.setPosition(horizontalArmPositions.get(currentHorizontalArmPosition));
+    }
+    public void SetArmPosition(ArmPosition.Vertical position)
+    {
+        if (position == null) return;
+        currentVerticalArmPosition = position;
+        verticalArmServo.setPosition(verticalArmPositions.get(currentVerticalArmPosition));
+    }
+    public double GetArmPosition(@NonNull Arm arm)
+    {
+        switch (arm)
+        {
+            case HORIZONTAL:
+                return horizontalArmPositions.get(currentHorizontalArmPosition);
+            case VERTICAL:
+                return verticalArmPositions.get(currentVerticalArmPosition);
+        }
+        return 0;
+    }
+    public void SetClawPosition(@NonNull Claw selectedClaw, boolean isOpen)
+    {
+        double position;
+        switch (selectedClaw) {
+            case HORIZONTAL:
+                position = isOpen ? horizontalClawOpenPosition : horizontalClawClosePosition;
+                horizontalClawServo.setPosition(position);
+                isHorizontalClawOpen = isOpen;
+                break;
+            case VERTICAL:
+                position = isOpen ? verticalClawOpenPosition : verticalClawClosePosition;
+                verticalClawServo.setPosition(position);
+                isVerticalClawOpen = isOpen;
+                break;
+        }
+    }
+    public boolean GetClawPosition(@NonNull Claw referenceClaw)
+    {
+        switch (referenceClaw)
+        {
+            case HORIZONTAL:
+                return isHorizontalClawOpen;
+            case VERTICAL:
+                return isVerticalClawOpen;
+        }
+        return false;
+    }
+    public boolean IsThisClawOpen(@NonNull Claw referenceClaw)
+    {
+        switch (referenceClaw)
+        {
+            case VERTICAL:
+                return isVerticalClawOpen;
+            case HORIZONTAL:
+                return isHorizontalClawOpen;
+        }
+        return false;
     }
 }

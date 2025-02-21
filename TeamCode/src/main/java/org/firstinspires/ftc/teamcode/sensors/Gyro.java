@@ -24,4 +24,8 @@ public class Gyro
     {
         return imu.getRobotYawPitchRollAngles().getYaw(angleUnit);
     }
+    public void ResetYaw()
+    {
+        imu.resetYaw();
+    }
 }

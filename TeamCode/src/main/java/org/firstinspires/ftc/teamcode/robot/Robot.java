@@ -3,11 +3,14 @@ package org.firstinspires.ftc.teamcode.robot;
 import androidx.annotation.NonNull;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.teamcode.drive.MecanumDrive;
 import org.firstinspires.ftc.teamcode.drive.TankDrive;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public class Robot
@@ -17,7 +20,7 @@ public class Robot
     HashMap<ArmPosition.Vertical, Double> verticalArmPositions =
             new HashMap<ArmPosition.Vertical, Double>();
 
-    public  double horizontalClawOpenPosition = 0.75;
+    public  double horizontalClawOpenPosition = 0.5;
     public  double horizontalClawClosePosition = 0;
     public  double verticalClawOpenPosition = 0.5;
     public  double verticalClawClosePosition = 0;
@@ -25,8 +28,8 @@ public class Robot
     private boolean isHorizontalClawOpen = true;
     private boolean isVerticalClawOpen = true;
 
-    private DcMotor horizontalSlideMotor;
-    private DcMotor verticalSlideMotor;
+    private ArrayList<DcMotor> horizontalSlideMotors = new ArrayList<DcMotor>();
+    private ArrayList<DcMotor> verticalSlideMotors = new ArrayList<DcMotor>();
 
     private Servo verticalArmServo;
     private Servo horizontalArmServo;
@@ -39,22 +42,41 @@ public class Robot
     private ArmPosition.Horizontal currentHorizontalArmPosition =
             ArmPosition.Horizontal.CONNECTING_POSITION;
 
-    public TankDrive drive = new TankDrive();
+    private String[] verticalSlideMotorNames;
+    private String[] horizontalSlideMotorNames;
+
+    public MecanumDrive drive = new MecanumDrive();
 
     public Robot(HashMap<ArmPosition.Horizontal, Double> horizontalPosition,
-                 HashMap<ArmPosition.Vertical, Double> verticalPosition)
+                 HashMap<ArmPosition.Vertical, Double> verticalPosition,
+                 String[] verticalSlideMotorNames, String[] horizontalSlideMotorNames)
     {
         horizontalArmPositions = horizontalPosition;
         verticalArmPositions = verticalPosition;
+        this.verticalSlideMotorNames = verticalSlideMotorNames;
+        this.horizontalSlideMotorNames = horizontalSlideMotorNames;
     }
     public void init(@NonNull HardwareMap hardwareMap)
     {
-        horizontalSlideMotor = hardwareMap.dcMotor.get("horizontalSlide");
-        verticalSlideMotor = hardwareMap.dcMotor.get("verticalSlide");
+        for (String name : verticalSlideMotorNames)
+        {
+            verticalSlideMotors.add(hardwareMap.dcMotor.get(name));
+        }
+        for (String name : horizontalSlideMotorNames)
+        {
+            horizontalSlideMotors.add(hardwareMap.dcMotor.get(name));
+        }
 
-        horizontalSlideMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        verticalSlideMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        verticalSlideMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        for (DcMotor slideMotor : horizontalSlideMotors)
+        {
+            slideMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        }
+        for (DcMotor slideMotor : verticalSlideMotors)
+        {
+            slideMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            slideMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        }
+        verticalSlideMotors.get(0).setDirection(DcMotorSimple.Direction.REVERSE);
 
         verticalArmServo = hardwareMap.servo.get("verticalArm");
         horizontalArmServo = hardwareMap.servo.get("horizontalArm");
@@ -69,21 +91,27 @@ public class Robot
         switch (slide)
         {
             case VERTICAL:
-                verticalSlideMotor.setPower(power);
+                for (DcMotor motor : verticalSlideMotors)
+                {
+                    motor.setPower(power);
+                }
                 break;
             case HORIZONTAL:
-                horizontalSlideMotor.setPower(power);
+                for (DcMotor motor : horizontalSlideMotors)
+                {
+                    motor.setPower(power);
+                }
                 break;
         }
     }
-    public double GetSlidesPosition(@NonNull Slide slide)
+    public double GetSlidesPosition(@NonNull Slide slide, int index)
     {
         switch (slide)
         {
             case VERTICAL:
-                return verticalSlideMotor.getCurrentPosition();
+                return verticalSlideMotors.get(index).getCurrentPosition();
             case HORIZONTAL:
-                return horizontalSlideMotor.getCurrentPosition();
+                return horizontalSlideMotors.get(index).getCurrentPosition();
         }
         return 0;
     }
@@ -110,6 +138,14 @@ public class Robot
         }
         return 0;
     }
+    public ArmPosition.Vertical GetVerticalArmPosition()
+    {
+        return currentVerticalArmPosition;
+    }
+    public ArmPosition.Horizontal GetHorizontalArmPosition()
+    {
+        return currentHorizontalArmPosition;
+    }
     public void SetClawPosition(@NonNull Claw selectedClaw, boolean isOpen)
     {
         double position;
@@ -126,7 +162,7 @@ public class Robot
                 break;
         }
     }
-    public boolean GetClawPosition(@NonNull Claw referenceClaw)
+    public boolean IsThisClawOpen(@NonNull Claw referenceClaw)
     {
         switch (referenceClaw)
         {
@@ -137,15 +173,15 @@ public class Robot
         }
         return false;
     }
-    public boolean IsThisClawOpen(@NonNull Claw referenceClaw)
+    public double GetClawPosition(@NonNull Claw referenceClaw)
     {
         switch (referenceClaw)
         {
             case VERTICAL:
-                return isVerticalClawOpen;
+                return verticalClawServo.getPosition();
             case HORIZONTAL:
-                return isHorizontalClawOpen;
+                return horizontalClawServo.getPosition();
         }
-        return false;
+        return 0;
     }
 }

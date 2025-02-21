@@ -23,10 +23,15 @@ public class MecanumDrive
         frontRightMotor = hardwareMap.dcMotor.get("frontRightMotor");
         backRightMotor = hardwareMap.dcMotor.get("backRightMotor");
 
+        frontLeftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        backLeftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        frontRightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        backRightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
         frontRightMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         backRightMotor.setDirection(DcMotorSimple.Direction.REVERSE);
     }
-    public void setMotorDrive(double x, double y, double rx, double botHeading)
+    public void setMotorDrive(double x, double y, double rx)
     {
         /*
         * Field centric rotating formula:
@@ -34,22 +39,25 @@ public class MecanumDrive
         * y2 = x1 * sin B + y1 * cos B
         * B: Beta (Heading)
         */
-        double rotX = x * Math.cos(-botHeading) - y * Math.sin(-botHeading);
-        double rotY = x * Math.sin(-botHeading) + y * Math.cos(-botHeading);
 
-        // rotY *= 1.1; // Improve strafing
+        double fixedX = x * 1.1;
 
-        // Denominator is the largest motor power (absolute value) or 1,
-        // Ensuring consistent power ratios when at least one value exceeds the [-1, 1] range.
-        double denominator = Math.max(Math.abs(rotY) + Math.abs(rotX) + Math.abs(rx), 1);
-        double frontLeftPower = (rotY + rotX + rx) / denominator;
-        double backLeftPower = (rotY - rotX + rx) / denominator;
-        double frontRightPower = (rotY - rotX - rx) / denominator;
-        double backRightPower = (rotY + rotX - rx) / denominator;
+        double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
+        double frontLeftPower = (y + fixedX + rx) / denominator;
+        double backLeftPower = (y - fixedX + rx) / denominator;
+        double frontRightPower = (y - fixedX - rx) / denominator;
+        double backRightPower = (y + fixedX - rx) / denominator;
 
         frontLeftMotor.setPower(frontLeftPower);
         backLeftMotor.setPower(backLeftPower);
         frontRightMotor.setPower(frontRightPower);
         backRightMotor.setPower(backRightPower);
+    }
+    public void runAllMotorTest(double power)
+    {
+        frontLeftMotor.setPower(power);
+        backLeftMotor.setPower(power);
+        frontRightMotor.setPower(power);
+        backRightMotor.setPower(power);
     }
 }
